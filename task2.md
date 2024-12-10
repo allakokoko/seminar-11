@@ -29,17 +29,24 @@
     ```
     
     *План выполнения:*
-    [Вставьте план выполнения]
+    "QUERY PLAN"
+"Bitmap Heap Scan on t_books  (cost=21.03..1336.08 rows=750 width=33) (actual time=0.033..0.034 rows=1 loops=1)"
+"  Recheck Cond: (to_tsvector('english'::regconfig, (title)::text) @@ '''expert'''::tsquery)"
+"  Heap Blocks: exact=1"
+"  ->  Bitmap Index Scan on t_books_fts_idx  (cost=0.00..20.84 rows=750 width=0) (actual time=0.023..0.023 rows=1 loops=1)"
+"        Index Cond: (to_tsvector('english'::regconfig, (title)::text) @@ '''expert'''::tsquery)"
+"Planning Time: 2.501 ms"
+"Execution Time: 0.073 ms"
     
     *Объясните результат:*
     [Ваше объяснение]
 
-6. Удалите индекс:
+7. Удалите индекс:
     ```sql
     DROP INDEX t_books_fts_idx;
     ```
 
-7. Создайте таблицу lookup:
+8. Создайте таблицу lookup:
     ```sql
     CREATE TABLE t_lookup (
          item_key VARCHAR(10) NOT NULL,
@@ -47,13 +54,13 @@
     );
     ```
 
-8. Добавьте первичный ключ:
+9. Добавьте первичный ключ:
     ```sql
     ALTER TABLE t_lookup 
     ADD CONSTRAINT t_lookup_pk PRIMARY KEY (item_key);
     ```
 
-9. Заполните данными:
+10. Заполните данными:
     ```sql
     INSERT INTO t_lookup 
     SELECT 
@@ -61,7 +68,7 @@
          'Value_' || generate_series(1, 150000);
     ```
 
-10. Создайте кластеризованную таблицу:
+11. Создайте кластеризованную таблицу:
      ```sql
      CREATE TABLE t_lookup_clustered (
           item_key VARCHAR(10) PRIMARY KEY,
@@ -69,7 +76,7 @@
      );
      ```
 
-11. Заполните её теми же данными:
+12. Заполните её теми же данными:
      ```sql
      INSERT INTO t_lookup_clustered 
      SELECT * FROM t_lookup;
@@ -77,42 +84,50 @@
      CLUSTER t_lookup_clustered USING t_lookup_clustered_pkey;
      ```
 
-12. Обновите статистику:
+13. Обновите статистику:
      ```sql
      ANALYZE t_lookup;
      ANALYZE t_lookup_clustered;
      ```
 
-13. Выполните поиск по ключу в обычной таблице:
+14. Выполните поиск по ключу в обычной таблице:
      ```sql
      EXPLAIN ANALYZE
      SELECT * FROM t_lookup WHERE item_key = '0000000455';
      ```
      
      *План выполнения:*
-     [Вставьте план выполнения]
+     "QUERY PLAN"
+"Index Scan using t_lookup_pk on t_lookup  (cost=0.42..8.44 rows=1 width=23) (actual time=2.152..2.156 rows=1 loops=1)"
+"  Index Cond: ((item_key)::text = '0000000455'::text)"
+"Planning Time: 0.403 ms"
+"Execution Time: 2.185 ms"
      
      *Объясните результат:*
      [Ваше объяснение]
 
-14. Выполните поиск по ключу в кластеризованной таблице:
+15. Выполните поиск по ключу в кластеризованной таблице:
      ```sql
      EXPLAIN ANALYZE
      SELECT * FROM t_lookup_clustered WHERE item_key = '0000000455';
      ```
      
      *План выполнения:*
-     [Вставьте план выполнения]
+     "QUERY PLAN"
+"Index Scan using t_lookup_clustered_pkey on t_lookup_clustered  (cost=0.42..8.44 rows=1 width=23) (actual time=0.535..0.536 rows=1 loops=1)"
+"  Index Cond: ((item_key)::text = '0000000455'::text)"
+"Planning Time: 0.232 ms"
+"Execution Time: 0.556 ms"
      
      *Объясните результат:*
      [Ваше объяснение]
 
-15. Создайте индекс по значению для обычной таблицы:
+16. Создайте индекс по значению для обычной таблицы:
      ```sql
      CREATE INDEX t_lookup_value_idx ON t_lookup(item_value);
      ```
 
-16. Создайте индекс по значению для кластеризованной таблицы:
+17. Создайте индекс по значению для кластеризованной таблицы:
      ```sql
      CREATE INDEX t_lookup_clustered_value_idx 
      ON t_lookup_clustered(item_value);
@@ -125,7 +140,11 @@
      ```
      
      *План выполнения:*
-     [Вставьте план выполнения]
+     "QUERY PLAN"
+"Index Scan using t_lookup_value_idx on t_lookup  (cost=0.42..8.44 rows=1 width=23) (actual time=0.368..0.369 rows=0 loops=1)"
+"  Index Cond: ((item_value)::text = 'T_BOOKS'::text)"
+"Planning Time: 1.232 ms"
+"Execution Time: 0.391 ms"
      
      *Объясните результат:*
      [Ваше объяснение]
@@ -137,7 +156,11 @@
      ```
      
      *План выполнения:*
-     [Вставьте план выполнения]
+     "QUERY PLAN"
+"Index Scan using t_lookup_clustered_value_idx on t_lookup_clustered  (cost=0.42..8.44 rows=1 width=23) (actual time=0.412..0.412 rows=0 loops=1)"
+"  Index Cond: ((item_value)::text = 'T_BOOKS'::text)"
+"Planning Time: 0.955 ms"
+"Execution Time: 0.432 ms"
      
      *Объясните результат:*
      [Ваше объяснение]
